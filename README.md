@@ -1,6 +1,15 @@
 # Photon-utility-watch
 
-This is a simple system that monitors activity of a residential home sump pump, a water heater, and hvac system. The code evolved and stabilized about 3 years ago and has been running solid ever since, so what it lacks in elegance it makes up for in reliability...
+This is a simple system that monitors activity of a residential home sump pump, a water heater,
+and hvac system. The code evolved and stabilized about 3 years ago and has been running solid
+ever since, so what it lacks in elegance it makes up for in reliability...
+
+I use a [Particle Photon] (https://docs.particle.io/photon/) which is easy to set up on
+wifi and program via their web IDE. I have in other projects used the [Electron] (https://docs.particle.io/electron/)
+which uses 3G cellular.  Here is my power goes out I'm sunk anyway (without a battery backup on 
+the sump) but in other circumstances, such as a vacation home, the electron is nice in that it can
+run for about a day without power and you can have it tell you the power is out (it's plugged in
+so you know power is out by polling the battery periodically to see if it is discharging) 
 
 ## Software
 
@@ -22,9 +31,12 @@ that's published and through webhooks it triggers a text message letting me know
 Partly because I am not sure how robust the Photon is to simultaneous interrupts I set these three timers
 with prime numbers so they won't collide much, and because it seemed like a fun use of prime numbers.
 
+You should be able to just paste the code into the Particle IDE but you will want to manually add the libraries,
+which is easy.
+
 ### Hardware
 
-On the Photon I have three sensors attached to three pins.
+On the Photon I have three sensors attached to three pins.  It's always plugged in but I also have a LiPo battery on it in case there are short power outages (my Wifi and cable modem gear is also battery backed up).
 
 ### Current Sensor
 
