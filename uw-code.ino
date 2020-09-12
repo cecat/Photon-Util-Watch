@@ -140,9 +140,12 @@ void loop() {
 /************************************/
 /***        TIMER FUNCTIONS       ***/
 /************************************/
-//
-// timed check of sump
-//
+
+/***********************************
+
+ timed check of sump
+
+*/
 void checkSump () {
 
     //Particle.publish("timerDebug", "checked sump", PRIVATE);
@@ -167,9 +170,13 @@ void checkSump () {
         sumpOn = false;
     }
 }
-//
-// timed check of everything but sump, which in this case is HVAC and water heater
-//
+
+/***********************************
+
+ timed check of HVAC and water heater
+
+ */
+
 void checkAll () {
     int reading;
     
@@ -193,11 +200,16 @@ void checkAll () {
     waterTemp = getTemp();
     if (waterTemp < 50) waterTemp = lastTemp;
 }
-/*
+
+/***********************************
+
+ Check to see if the sump is running hard
+
  Every few minutes we also check to see if the sump is in 'danger' which for my sump means it's running
  more than 7 times in any 30 minute window.  It just lets me know that I should pay close attention because
  a sump outage would mean a very quick overflow and basement incident.
  */
+
 void siren(){
     if (runCount > 6) Particle.publish("Danger", "sump", PRIVATE) ;
 }
@@ -206,9 +218,12 @@ void siren(){
 /***      ON-DEMAND FUNCTIONS     ***/
 /************************************/
 
-//
-// poll the temperature sensor in the water heater chimney
-//
+/***********************************
+
+ poll the temperature sensor in the water heater chimney
+ this code comes from example code in the Onewire library (thanks)
+
+*/
 
 double getTemp() {
   // Read the next available 1-Wire temperature sensor
@@ -238,6 +253,12 @@ double getTemp() {
   Serial.println();
   return (sensor.fahrenheit()); // F, because this is Amurica
 }
+
+/***********************************
+
+ debug onewire 
+
+*/
 
 void printDebugInfo() {
   // If there's an electrical error on the 1-Wire bus you'll get a CRC error
