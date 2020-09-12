@@ -4,8 +4,8 @@ This is a simple system that monitors activity of a residential home sump pump, 
 and hvac system. The code evolved and stabilized about 3 years ago and has been running solid
 ever since, so what it lacks in elegance it makes up for in reliability...
 
-I use a [Particle Photon] (https://docs.particle.io/photon/) which is easy to set up on
-wifi and program via their web IDE. I have in other projects used the [Electron] (https://docs.particle.io/electron/)
+I use a [Particle Photon](https://docs.particle.io/photon/) which is easy to set up on
+wifi and program via their web IDE. I have in other projects used the [Electron](https://docs.particle.io/electron/)
 which uses 3G cellular.  Here is my power goes out I'm sunk anyway (without a battery backup on 
 the sump) but in other circumstances, such as a vacation home, the electron is nice in that it can
 run for about a day without power and you can have it tell you the power is out (it's plugged in
