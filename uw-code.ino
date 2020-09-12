@@ -2,7 +2,6 @@
    Monitor sump, hvac, and water heater.
    Report to ThingSpeak.com via webhooks
     C. Catlett May 2017
-
                                           */
 
 #include <OneWire.h>
@@ -20,13 +19,15 @@
 DS18 sensor(D0);
 
 // global constant parameters
+
 int     Window          = 1800000;          // 30 min window for sump runcount
-int     motorON         = 100;              // need to calibrate - resting state ~40-50
-int     sumpCheckFreq   = 2002;             // check sump every 2 seconds
-                                // prime #s so these two interrupts very rarely fire together, which
-                                // would probably make the photon faint so why risk it
-int     allCheckFreq    = 17321;            // check everyone else every once-in-a-while ms
-int     reportFreq      = 23431;            // report a var to ThingSpeak every less-often ms
+int     motorON         = 100;              // you may need to calibrate - resting state for my sump is ~40-50
+
+// interrupt timers all prime #s to minimize collisions, since I don't trust the Photon to handle that well
+
+int     sumpCheckFreq   = 2003;             // check sump every 2 seconds since it typically runs only for 20s or so
+int     allCheckFreq    = 17351;            // check hvac and water heater less often as they have longer duty cycles
+int     reportFreq      = 23431;            // report a var to ThingSpeak every n ms
 int     reportCount     = 0;
 #define HIST              32               // number of sump checks to keep in short term memory
 
@@ -53,20 +54,24 @@ int     hvacDuration    = 0;                // duration of hvac event
 // sump duty cycle variables
 #define SMAX              16                // maximum we might ever see the sump run in a window
 int     sumpRuns        [SMAX];             // keep track of how many time sump runs in a given window of time
-int     dutyWindow      = 1800000;          // set the duty cycle window to 30 minutes
+int     dutyWindow      = 1800000;          // set the sump duty cycle of interest window to 30 minutes
 int     dutyPtr         = 0;                // pointer into dutyWindow array
 int     runCount        = 0;                // sump runcount past Window ms
 
 
-// interrupts and timers
+// interrupt timers
 Timer sumpTimer(sumpCheckFreq, checkSump);  // every checkFreq ms check the sump current
 Timer allTimer(allCheckFreq,    checkAll);  // every allCheckFreq ms check the others
 Timer alertTimer(Window, siren);            // for ifttt lets blow the wistle every 30min if needed
 
 int     lastReport      = 0;
 
+/*
+  ready... set..
+*/
+
 void setup() {
-    Time.zone             (-5);
+    Time.zone             (-5);             // sweet home, Chicago
     Particle.syncTime       ();
     pinMode(sumpPin,    INPUT);
     pinMode(hvacPin,    INPUT);
@@ -85,11 +90,20 @@ void setup() {
     alertTimer.start();
 }
 
+/*
+ GO
+
+ All the action (checking sensors, tracking duty cycles) happens via interrupts so 
+ we just spinwait until it's time to report
+ and since ThingSpeak has throttles we just report one thing at a time.  So checking stuff
+ and reporting it are totally decoupled. 
+ */
+ 
 void loop() {
 
     if ((millis() - lastReport) > reportFreq) {         // time to report yet? 
-       int cases = 5;                                  // hard code #cases here feels like a kluge
-        switch ((reportCount++) % cases) {              // simple round robin reporting
+       int cases = 5;                                  // hard code case # here, feels like a kluge
+        switch ((reportCount++) % cases) {              // simple round robin reporting on var at a time
             case 0:                                     // sump current
                 for (int j=0;j<HIST;j++) {
                     sumpCur = max (sumpCur, sumpHistory[j]);
@@ -135,7 +149,7 @@ void checkSump () {
     sumpCur = analogRead(sumpPin);
     sumpPointer = (sumpPointer+1) % HIST;
     sumpHistory[sumpPointer] = sumpCur;
-    if (sumpCur > motorON) {
+    if (sumpCur > motorON) {                               // see comments above - your value may be diff
         if (!sumpOn) {
             //sumpEvent = true;
             sumpStart = millis();
@@ -147,14 +161,14 @@ void checkSump () {
             sumpDuration = (millis() - sumpStart)/1000;     // sump event duration in seconds
             sumpRuns[dutyPtr] = millis();                   // record the event in the duty cycle counter buffer
             dutyPtr = (dutyPtr + 1) % SMAX;                 // advance pointer in the circular cycle counter buffer
-            runCount = 0;                                   // how many of the past SMAX runs are less than dutyWindow ms prior to now?
+            runCount = 0;                                   // how many of the past SMAX runs are < dutyWindow ms prior to now?
             for (int i=0; i<SMAX; i++) if ((millis() - sumpRuns[i]) < dutyWindow) runCount++;
         }
         sumpOn = false;
     }
 }
 //
-// timed check of everything but sump
+// timed check of everything but sump, which in this case is HVAC and water heater
 //
 void checkAll () {
     int reading;
@@ -179,16 +193,21 @@ void checkAll () {
     waterTemp = getTemp();
     if (waterTemp < 50) waterTemp = lastTemp;
 }
-
+/*
+ Every few minutes we also check to see if the sump is in 'danger' which for my sump means it's running
+ more than 7 times in any 30 minute window.  It just lets me know that I should pay close attention because
+ a sump outage would mean a very quick overflow and basement incident.
+ */
 void siren(){
     if (runCount > 6) Particle.publish("Danger", "sump", PRIVATE) ;
 }
+
 /************************************/
 /***      ON-DEMAND FUNCTIONS     ***/
 /************************************/
 
 //
-// poll the temperature sensor
+// poll the temperature sensor in the water heater chimney
 //
 
 double getTemp() {
@@ -196,7 +215,6 @@ double getTemp() {
   if (sensor.read()) {
     // Do something cool with the temperature
     Serial.printf("Temperature %.2f C %.2f F ", sensor.celsius(), sensor.fahrenheit());
-    //Particle.publish("temperature", String(sensor.celsius()), PRIVATE);
 
     // Additional info useful while debugging
     printDebugInfo();
@@ -218,7 +236,7 @@ double getTemp() {
     }
   }
   Serial.println();
-  return (sensor.fahrenheit());
+  return (sensor.fahrenheit()); // F, because this is Amurica
 }
 
 void printDebugInfo() {
@@ -255,4 +273,5 @@ void printDebugInfo() {
     data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]
   );
 }
+
 
