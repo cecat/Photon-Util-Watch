@@ -13,10 +13,10 @@ The code runs a reporting loop that every 30s or reports one of five different v
 
 While the reporting loop is running I have three interrupt timers to do that measurements
 (and determine things like duration).
-One timer checks the sump every 2 seconds (since its typical runtime is 15-25s);
-another checks both the HVAC and water heater, and tracks how many times the sump runs in a 30min window
-(a lot means I should be paying attention just in case).  This one runs about 4x a minute, which is plenty often).
-A third interrupt runs about every 30 minutes and checks to see if the sump is running hard.  If so then
+1. One timer checks the sump every 2 seconds (since its typical runtime is 15-25s)
+2. Another checks both the HVAC and water heater, and tracks how many times the sump runs in a 30min window
+(a lot means I should be paying attention just in case).  This one runs about every 17s, which is plenty often.
+3. A third interrupt runs about every 30 minutes and checks to see if the sump is running hard.  If so then
 that's published and through webhooks it triggers a text message letting me know to keep an eye on things.
 
 Partly because I am not sure how robust the Photon is to simultaneous interrupts I set these three timers
