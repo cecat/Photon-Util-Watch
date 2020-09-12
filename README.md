@@ -1,10 +1,8 @@
 # Photon-utility-watch
-==========
 
-This repo has (a) code from the Particle.io IDE and (b) hardware details, for a
-simple system that monitors activity of a residential home sump pump, a water heater, and hvac system.
+This is a simple system that monitors activity of a residential home sump pump, a water heater, and hvac system. The code evolved and stabilized about 3 years ago and has been running solid ever since, so what it lacks in elegance it makes up for in reliability...
 
-##1. Software
+## Software
 
 Paricle code - I use the Photon (wifi) and the Particle.io PUBLISH function,
 then Webhooks at Particle.io to push stuff to ThingSpeak.com.
@@ -24,7 +22,7 @@ that's published and through webhooks it triggers a text message letting me know
 Partly because I am not sure how robust the Photon is to simultaneous interrupts I set these three timers
 with prime numbers so they won't collide much, and because it seemed like a fun use of prime numbers.
 
-##2. Hardware
+### Hardware
 
 On the Photon I have three sensors attached to three pins.
 
