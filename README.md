@@ -63,7 +63,7 @@ When you create your webhook you will be providing the following information, an
 4. Request Format. Web Form
 5. Form.<br>
 ```
-{ <br>
+{
   "event": "{{{PARTICLE_EVENT_NAME}}}",
   "data": "{{{PARTICLE_EVENT_VALUE}}}",
   "coreid": "{{{PARTICLE_DEVICE_ID}}}",
@@ -72,7 +72,12 @@ When you create your webhook you will be providing the following information, an
   "api_key": "fill_in_your_ThingSpeak_channel_API"
 }
 ```
-6. Headers. { "Content-Type": "application/x-www-form-urlencoded" }
+6. Headers.<br>
+```
+{
+   "Content-Type": "application/x-www-form-urlencoded"
+}
+```
 7. Enforce SSL. Yes
 
           
