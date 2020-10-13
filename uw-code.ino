@@ -2,6 +2,12 @@
    Monitor sump, hvac, and water heater.
    Report to ThingSpeak.com via webhooks
     C. Catlett May 2017
+
+   This code uses a wifi-connected Particle Photon.  Note that it should work fine with a
+   cellular-connected Electron,however we are using particle variables and these
+   are regularly shipped up to the Particle cloud to be available there.  That uses
+   quite a bit of cellular data.  If you are implementing (anything) on a Particle Electron
+   use publish to send things when you need them - be very careful using particle variables.
                                           */
 
 #include <OneWire.h>
@@ -10,9 +16,9 @@
 #include "math.h"
 
 // sensor pins
-#define waterPin    D0                      // pin for ds18b20-A to water heater chimney
-#define hvacPin     A0                      // pin for HVAC fan current sensor
-#define sumpPin     A1                      // pin for sump pump current sensor
+#define waterPin    D0               // pin for ds18b20-A to water heater chimney
+#define hvacPin     A0               // pin for HVAC fan current sensor
+#define sumpPin     A1               // pin for sump pump current sensor
 
 
 // ds18b20 temperature sensor instance
@@ -20,43 +26,43 @@ DS18 sensor(D0);
 
 // global constant parameters
 
-int     Window          = 1800000;          // 30 min window for sump runcount
-int     motorON         = 100;              // you may need to calibrate - resting state for my sump is ~40-50
+int     Window          = 1800000;   // 30 min window for sump runcount
+int     motorON         = 100;       // you may need to calibrate - resting state for my sump is ~40-50
 
-// interrupt timers all prime #s to minimize collisions, since I don't trust the Photon to handle that well
+// interrupt timers all prime #s to minimize collisions,
+// since I don't trust the Photon to handle that well
 
-int     sumpCheckFreq   = 2003;             // check sump every 2 seconds since it typically runs only for 20s or so
-int     allCheckFreq    = 17351;            // check hvac and water heater less often as they have longer duty cycles
-int     reportFreq      = 23431;            // report a var to ThingSpeak every n ms
+int     sumpCheckFreq   = 2003;      // check sump every ~2s as it typically runs only for 20s or so
+int     allCheckFreq    = 17351;     // check hvac and water heater less often as they have longer duty cycles
+int     reportFreq      = 23431;     // report a var to ThingSpeak every ~23s
 int     reportCount     = 0;
-#define HIST              32               // number of sump checks to keep in short term memory
+#define HIST              32         // number of sump checks to keep in short term memory
 
 // global variables
-bool    sumpOn          = false;            // state variables
+bool    sumpOn          = false;     // state variables
 bool    hvacOn          = false;
 bool    heaterOn        = false;
-int     sumpCur         = 0;                // sensor values
+int     sumpCur         = 0;         // sensor values
 int     hvacCur         = 0;
 double  waterTemp       = 70;
 double  lastTemp        = 70;
-char    reportStrg       [64];
 
 // statistics variables
-int     sumpHistory      [HIST];            // all sump readings between reports
+int     sumpHistory      [HIST];     // all sump readings between reports
 int     sumpPointer     = 0;
 bool    sumpEvent       = false;
 bool    hvacEvent       = false;
-int     sumpStart       = 0;                // start time of sump event
-int     sumpDuration    = 0;                // duration of sump event
-int     hvacStart       = 0;                // start time of hvac event
-int     hvacDuration    = 0;                // duration of hvac event
+int     sumpStart       = 0;         // start time of sump event
+int     sumpDuration    = 0;         // duration of sump event
+int     hvacStart       = 0;         // start time of hvac event
+int     hvacDuration    = 0;         // duration of hvac event
 
 // sump duty cycle variables
-#define SMAX              16                // maximum we might ever see the sump run in a window
-int     sumpRuns        [SMAX];             // keep track of how many time sump runs in a given window of time
-int     dutyWindow      = 1800000;          // set the sump duty cycle of interest window to 30 minutes
-int     dutyPtr         = 0;                // pointer into dutyWindow array
-int     runCount        = 0;                // sump runcount past Window ms
+#define SMAX              16         // maximum we might ever see the sump run in a window
+int     sumpRuns        [SMAX];      // keep track of how many time sump runs in a given window of time
+int     dutyWindow      = 1800000;   // set the sump duty cycle of interest window to 30 minutes
+int     dutyPtr         = 0;         // pointer into dutyWindow array
+int     runCount        = 0;         // sump runcount past Window ms
 
 
 // interrupt timers
@@ -92,7 +98,6 @@ void setup() {
 
 /*
  GO
-
  All the action (checking sensors, tracking duty cycles) happens via interrupts so 
  we just spinwait until it's time to report
  and since ThingSpeak has throttles we just report one thing at a time.  So checking stuff
@@ -101,23 +106,23 @@ void setup() {
  
 void loop() {
 
-    if ((millis() - lastReport) > reportFreq) {         // time to report yet? 
-       int cases = 5;                                  // hard code case # here, feels like a kluge
-        switch ((reportCount++) % cases) {              // simple round robin reporting on var at a time
-            case 0:                                     // sump current
+    if ((millis() - lastReport) > reportFreq) {  // time to report yet? 
+       int cases = 5;                            // hard code case # here, feels like a kluge
+        switch ((reportCount++) % cases) {       // simple round robin reporting on var at a time
+            case 0:                              // sump current
                 for (int j=0;j<HIST;j++) {
                     sumpCur = max (sumpCur, sumpHistory[j]);
                     sumpHistory[j]=0;
                 }
                 Particle.publish("sumpCurrent", String(sumpCur),    PRIVATE);
                 break;
-            case 1:                                     // hvac current
+            case 1:                              // hvac current
                 Particle.publish("hvacCurrent", String(hvacCur),    PRIVATE);
                 break;
-            case 2:                                     // water heater chimney temperature
+            case 2:                              // water heater chimney temperature
                 Particle.publish("waterTemp",   String(waterTemp),  PRIVATE);
                 break;
-            case 3:                                     // duration of last hvac event (if there was one; 0 if not)
+            case 3:                              // duration of last hvac run (0 if none)
                 if (hvacEvent) {
                     if (!hvacOn) Particle.publish("hvacEvent", String(hvacDuration), PRIVATE);
                     hvacEvent = false;
@@ -125,7 +130,7 @@ void loop() {
                     Particle.publish("hvacEvent", "0", PRIVATE);
                 }
                 break;
-            case 4:                                     // duration of last sump event (if there was one; 0 if not)
+            case 4:                              // duration of last sump run (- 0 if none)
                 if (sumpEvent) {
                     Particle.publish("sumpEvent", String(sumpDuration), PRIVATE);
                     sumpEvent = false;
@@ -152,7 +157,7 @@ void checkSump () {
     sumpCur = analogRead(sumpPin);
     sumpPointer = (sumpPointer+1) % HIST;
     sumpHistory[sumpPointer] = sumpCur;
-    if (sumpCur > motorON) {                               // see comments above - your value may be diff
+    if (sumpCur > motorON) {                        // see comments above - your value may be diff
         if (!sumpOn) {
             //sumpEvent = true;
             sumpStart = millis();
@@ -161,10 +166,10 @@ void checkSump () {
     } else {
         if (sumpOn) {
             sumpEvent = true;
-            sumpDuration = (millis() - sumpStart)/1000;     // sump event duration in seconds
-            sumpRuns[dutyPtr] = millis();                   // record the event in the duty cycle counter buffer
-            dutyPtr = (dutyPtr + 1) % SMAX;                 // advance pointer in the circular cycle counter buffer
-            runCount = 0;                                   // how many of the past SMAX runs are < dutyWindow ms prior to now?
+            sumpDuration = (millis() - sumpStart)/1000;  // sump event duration in seconds
+            sumpRuns[dutyPtr] = millis();                // record the event in duty cycle counter buffer
+            dutyPtr = (dutyPtr + 1) % SMAX;              // advance pointer in circular cycle counter buffer
+            runCount = 0;                                // how many of the past SMAX runs are < dutyWindow ms prior to now?
             for (int i=0; i<SMAX; i++) if ((millis() - sumpRuns[i]) < dutyWindow) runCount++;
         }
         sumpOn = false;
@@ -294,5 +299,3 @@ void printDebugInfo() {
     data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]
   );
 }
-
-
