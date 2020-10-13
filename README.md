@@ -55,7 +55,7 @@ Mine is gas so I stuck a pretty sturdy one-wire DS18B20 temperature sensor like 
 
 Particle's console has an "Integrations" tab where you can set up webhooks.  For ThingSpeak.com you'll need the API key for your channel(s), which you can find in the "API Keys" tab while viewing your channel.
 
-When you create your webhook you will be providing the following information, and here we will use the example of "waterTemp" which pushes the water heater temp into a ThingSpeak channel for graphing. 
+When you create your webhook you will be providing the following information, and here we will use the example of "waterTemp" which pushes the water heater temp into a ThingSpeak channel for graphing. After you click on "new integration" on the Integrations page you'll select "Webhook" which takes you to a set of forms for building webhooks.  TBH it's been 4 or 5 yrs since I created my Webhooks so I don't recall exactly how I put the values below into this form, but hopefully you can use below as an example to clone.
 
 1. Event Name.  When you use Particle.publish() the first argument is an event name string such as "sumpCurrent" or "waterTemp" - keywords you make up.  To set up a webhook you will use these as your "Event Name." In this case we will use "waterTemp" as the event name, corresponding to the Particle.publish("waterTemp", String(waterTemp), PRIVATE); call in the Photon sketch.
 2. Full URL.  Here you put the ThingSpeak API url which is `https://api.thingspeak.com/update`
