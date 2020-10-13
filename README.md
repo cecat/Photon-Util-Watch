@@ -58,9 +58,9 @@ Particle's console has an "Integrations" tab where you can set up webhooks.  For
 When you create your webhook you will be providing the following information, and here we will use the example of "waterTemp" which pushes the water heater temp into a ThingSpeak channel for graphing. 
 
 1. Event Name.  When you use Particle.publish() the first argument is an event name string such as "sumpCurrent" or "waterTemp" - keywords you make up.  To set up a webhook you will use these as your "Event Name." In this case we will use "waterTemp" as the event name, corresponding to the Particle.publish("waterTemp", String(waterTemp), PRIVATE); call in the Photon sketch.
-2. Full URL.  Here you put the ThingSpeak API url which is https://api.thingspeak.com/update
+2. Full URL.  Here you put the ThingSpeak API url which is `https://api.thingspeak.com/update`
 3. Request Type. `POST`
-4. Request Format. Web Form
+4. Request Format. `Web Form`
 5. Form.<br>
 ```
 {
@@ -78,7 +78,7 @@ When you create your webhook you will be providing the following information, an
    "Content-Type": "application/x-www-form-urlencoded"
 }
 ```
-7. Enforce SSL. Yes
+7. Enforce SSL. `Yes`
 
           
 
